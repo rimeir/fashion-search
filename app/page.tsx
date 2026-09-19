@@ -1,68 +1,146 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import ProfileSetup from "@/components/ProfileSetup";
+import SearchBar from "@/components/SearchBar";
+import ParsedBadges from "@/components/ParsedBadges";
+import ProductGrid from "@/components/ProductGrid";
+import { EMPTY_PROFILE, type ParsedQuery, type Product, type UserProfile } from "@/lib/types";
+
+const PROFILE_STORAGE_KEY = "fashion-search-profile";
 
 export default function Home() {
+  const [profile, setProfile] = useState<UserProfile>(EMPTY_PROFILE);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastParsed, setLastParsed] = useState<ParsedQuery | null>(null);
+
+  // localStorage는 서버에 없는 client-only 저장소라 첫 렌더는 항상 기본값으로 그린 뒤
+  // mount 이후 이 effect에서 한 번만 동기화한다(SSR/hydration mismatch 방지).
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+      if (saved) {
+        setProfile(JSON.parse(saved));
+      } else {
+        setIsProfileOpen(true);
+      }
+    } catch {
+      setIsProfileOpen(true);
+    }
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  function handleProfileChange(next: UserProfile) {
+    setProfile(next);
+    try {
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // localStorage 사용 불가 환경에서는 세션 동안만 프로필을 유지한다.
+    }
+  }
+
+  async function handleSearch(query: string) {
+    setLoading(true);
+    setError(null);
+    setHasSearched(true);
+
+    try {
+      const parseRes = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          profile: {
+            age: profile.ageGroup ?? "",
+            gender: profile.gender ?? "",
+            styles: profile.styles,
+          },
+        }),
+      });
+      if (!parseRes.ok) {
+        const body = await parseRes.json().catch(() => null);
+        throw new Error(body?.error ?? "검색어 분석에 실패했습니다.");
+      }
+      const parsed: ParsedQuery = await parseRes.json();
+      setLastParsed(parsed);
+
+      const searchRes = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keywords: parsed.keywords,
+          categories: parsed.categories,
+          priceMin: parsed.priceMin,
+          priceMax: parsed.priceMax,
+        }),
+      });
+      if (!searchRes.ok) {
+        const body = await searchRes.json().catch(() => null);
+        throw new Error(body?.error ?? "상품 검색에 실패했습니다.");
+      }
+      const { products: results }: { products: Product[] } = await searchRes.json();
+      setProducts(results);
+    } catch (err) {
+      setProducts([]);
+      setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="flex flex-1 flex-col bg-zinc-50 dark:bg-black">
+      <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-black/80">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Fitto
+            </h1>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">말하듯이 검색하세요</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsProfileOpen((prev) => !prev)}
+            aria-expanded={isProfileOpen}
+            className="flex items-center gap-1 rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            프로필 설정
+            <span
+              className={`transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`}
+              aria-hidden
+            >
+              ▾
+            </span>
+          </button>
         </div>
+      </header>
+
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ${
+            isProfileOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <ProfileSetup profile={profile} onChange={handleProfileChange} />
+          </div>
+        </div>
+
+        <section className="flex flex-col gap-3">
+          <SearchBar onSearch={handleSearch} loading={loading} />
+          {lastParsed && !loading && <ParsedBadges parsed={lastParsed} />}
+        </section>
+
+        {hasSearched && (
+          <section className="flex flex-1 flex-col">
+            <ProductGrid products={products} loading={loading} error={error} />
+          </section>
+        )}
       </main>
     </div>
   );
