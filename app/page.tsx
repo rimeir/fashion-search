@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ProfileSetup from "@/components/ProfileSetup";
 import SearchBar from "@/components/SearchBar";
 import ParsedBadges from "@/components/ParsedBadges";
@@ -17,6 +17,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastParsed, setLastParsed] = useState<ParsedQuery | null>(null);
+
+  // handleSearch 등 콜백이 클로저로 오래된 profile을 참조하지 않도록 항상 최신값을 추적한다.
+  const profileRef = useRef(profile);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   // localStorage는 서버에 없는 client-only 저장소라 첫 렌더는 항상 기본값으로 그린 뒤
   // mount 이후 이 effect에서 한 번만 동기화한다(SSR/hydration mismatch 방지).
@@ -50,9 +56,11 @@ export default function Home() {
     setHasSearched(true);
 
     try {
+      const profile = profileRef.current;
       const parseRes = await fetch("/api/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({
           query,
           profile: {
@@ -72,6 +80,7 @@ export default function Home() {
       const searchRes = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({
           keywords: parsed.keywords,
           categories: parsed.categories,

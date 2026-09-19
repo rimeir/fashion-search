@@ -50,10 +50,17 @@ const OUTPUT_SCHEMA = {
 const SYSTEM_PROMPT = `너는 패션 이커머스 검색어 분석기다. 사용자의 자연어 요청과 프로필을 분석해서
 keywords, priceMin, priceMax, categories 필드를 가진 JSON만 반환한다.
 
-키워드 정제 규칙:
-- keywords는 실제 검색어만 포함해야 한다.
-- "+", "이하", "이상", "전후", "대", "원" 같은 구분자나 가격 관련 단어는 keywords에 포함하지 마라.
-- 공백은 제거해 하나의 단어로 합친다 (예: "후드 집업" → "후드집업").
+keywords 규칙 (반드시 준수):
+- + 기호는 구분자이므로 keywords에 절대 포함하지 마라
+- 가격 관련 단어(만원, 원, 이하, 이상, 전후, 대)는 keywords에 절대 포함하지 마라
+- 계절/상황 단어(여름, 겨울, 봄, 가을)는 keywords에 포함해도 됨
+- 각 키워드는 공백 없이 한 단어로
+- 반드시 실제 의류 관련 단어만 포함
+
+예시:
+'린넨 셔츠 + 여름 + 3만원대' → keywords: ['린넨셔츠', '여름']
+'후드 집업 + 오버핏 + 4만원' → keywords: ['후드집업', '오버핏']
+'블랙 슬랙스 + 미니멀 + 7만원 이하' → keywords: ['블랙슬랙스', '미니멀']
 
 가격 표현 파싱 규칙:
 - "5만원 전후"처럼 "N만원 전후"는 priceMin: (N-1)*10000, priceMax: (N+1)*10000 으로 해석한다. (예: 5만원 전후 → priceMin: 40000, priceMax: 60000)
@@ -61,8 +68,6 @@ keywords, priceMin, priceMax, categories 필드를 가진 JSON만 반환한다.
 - 수식어 없이 "N만원"만 단독으로 언급되면 priceMin: N*10000*0.8, priceMax: N*10000*1.2 로 해석한다 (±20%). (예: 4만원 → priceMin: 32000, priceMax: 48000)
 - 가격 언급이 전혀 없으면 priceMin: 0, priceMax: 999999 로 한다.
 - 그 외 명시적인 가격/범위 표현("~이하", "~이상", "N원부터 M원")은 문맥에 맞게 합리적으로 변환한다.
-
-예시: "후드 집업 + 오버핏 + 4만원" → keywords: ["후드집업", "오버핏"], priceMin: 32000, priceMax: 48000
 
 사용자 프로필(나이/성별/선호 스타일)은 카테고리와 키워드 해석의 참고 정보로만 사용하고,
 사용자가 메시지에서 명시한 조건을 항상 우선한다.`;
@@ -118,15 +123,18 @@ export async function POST(request: Request) {
       return Response.json({ error: "query가 필요합니다." }, { status: 400 });
     }
 
-    const message = await anthropic.messages.parse({
-      model: PARSE_MODEL,
-      max_tokens: 1000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildUserMessage(query, profile) }],
-      output_config: {
-        format: jsonSchemaOutputFormat(OUTPUT_SCHEMA),
+    const message = await anthropic.messages.parse(
+      {
+        model: PARSE_MODEL,
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: buildUserMessage(query, profile) }],
+        output_config: {
+          format: jsonSchemaOutputFormat(OUTPUT_SCHEMA),
+        },
       },
-    });
+      { fetchOptions: { cache: "no-store" } }
+    );
 
     if (!isValidParsedFilters(message.parsed_output)) {
       return Response.json(fallbackParse(query));

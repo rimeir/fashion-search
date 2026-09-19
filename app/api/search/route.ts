@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     url.searchParams.set("query", query);
     url.searchParams.set("api_key", apiKey);
 
-    const res = await fetch(url.toString());
+    const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) {
       // SerpApi 요청/응답 실패는 파싱 실패로 간주하고 빈 결과를 반환한다.
       return Response.json({ products: [], total: 0 });
