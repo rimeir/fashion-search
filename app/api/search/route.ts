@@ -12,33 +12,23 @@ interface SearchRequestBody {
 
 interface SerpApiShoppingItem {
   title?: string;
-  price?: string | number;
+  price?: number;
   thumbnail?: string;
-  product_link?: string;
-  source?: string;
+  link?: string;
+  stores?: string;
 }
 
 interface SerpApiShoppingResponse {
   shopping_results?: SerpApiShoppingItem[];
 }
 
-// SerpApi 가격은 "50,000원" 같은 포맷 문자열로 올 수 있어 숫자만 추출한다.
-function parsePrice(raw: string | number | undefined): number {
-  if (typeof raw === "number") return raw;
-  if (typeof raw === "string") {
-    const digits = raw.replace(/[^\d.]/g, "");
-    return digits ? Number(digits) : 0;
-  }
-  return 0;
-}
-
 function toProduct(item: SerpApiShoppingItem): Product {
   return {
     title: item.title ?? "",
-    price: parsePrice(item.price),
+    price: Number(item.price),
     thumbnail: item.thumbnail ?? "",
-    url: item.product_link ?? "",
-    mallName: item.source ?? "",
+    url: item.link ?? "",
+    mallName: item.stores ?? "",
   };
 }
 
@@ -63,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     const url = new URL(SERPAPI_ENDPOINT);
-    url.searchParams.set("engine", "naver_shopping");
+    url.searchParams.set("engine", "naver");
     url.searchParams.set("query", query);
     url.searchParams.set("api_key", apiKey);
 
@@ -74,9 +64,11 @@ export async function POST(request: Request) {
     }
 
     const data: SerpApiShoppingResponse = await res.json();
-    const rawResults = Array.isArray(data.shopping_results) ? data.shopping_results : [];
+    if (!Array.isArray(data.shopping_results)) {
+      return Response.json({ products: [], total: 0 });
+    }
 
-    const products = rawResults.map(toProduct);
+    const products = data.shopping_results.map(toProduct);
 
     // priceMin이 0이면 가격 정보가 없다는 뜻이므로 가격 필터를 적용하지 않는다.
     const filtered =
