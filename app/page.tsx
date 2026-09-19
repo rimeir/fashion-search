@@ -86,6 +86,7 @@ export default function Home() {
           categories: parsed.categories,
           priceMin: parsed.priceMin,
           priceMax: parsed.priceMax,
+          profile: profileRef.current,
         }),
       });
       if (!searchRes.ok) {

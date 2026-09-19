@@ -3,11 +3,17 @@ import type { Product } from "@/lib/types";
 const SERPAPI_ENDPOINT = "https://serpapi.com/search";
 const MAX_RESULTS = 20;
 
+interface SearchProfile {
+  gender?: string;
+  styles?: string[];
+}
+
 interface SearchRequestBody {
   keywords: string[];
   priceMin: number;
   priceMax: number;
   categories: string[];
+  profile?: SearchProfile;
 }
 
 interface SerpApiShoppingItem {
@@ -43,13 +49,19 @@ export async function POST(request: Request) {
 
   try {
     const body: Partial<SearchRequestBody> = await request.json();
-    const keywords = body.keywords ?? [];
-    const priceMin = body.priceMin ?? 0;
-    const priceMax = body.priceMax ?? 999999;
+    const { keywords = [], priceMin = 0, priceMax = 999999, profile } = body;
 
     console.log("[SEARCH RECEIVED]", { keywords, priceMin, priceMax });
 
-    const query = keywords.join(" ").trim();
+    // 프로필의 성별/선호 스타일(첫 번째)을 검색어에 반영해 결과 관련성을 높인다.
+    const profileTerms: string[] = [];
+    if (profile?.gender === "여성") profileTerms.push("여성");
+    if (profile?.gender === "남성") profileTerms.push("남성");
+    if (profile?.styles && profile.styles.length > 0) profileTerms.push(profile.styles[0]);
+
+    const query = [...keywords, ...profileTerms].join(" ").trim();
+    console.log("[QUERY BUILT]", { query, priceMin, priceMax });
+
     if (!query) {
       return Response.json({ error: "keywords가 필요합니다." }, { status: 400 });
     }

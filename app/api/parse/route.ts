@@ -65,7 +65,7 @@ keywords 규칙 (반드시 준수):
 가격 표현 파싱 규칙:
 - "5만원 전후"처럼 "N만원 전후"는 priceMin: (N-1)*10000, priceMax: (N+1)*10000 으로 해석한다. (예: 5만원 전후 → priceMin: 40000, priceMax: 60000)
 - "3만원대"처럼 "N만원대"는 priceMin: N*10000, priceMax: N*10000+9999 로 해석한다. (예: 3만원대 → priceMin: 30000, priceMax: 39999)
-- 수식어 없이 "N만원"만 단독으로 언급되면 priceMin: N*10000*0.8, priceMax: N*10000*1.2 로 해석한다 (±20%). (예: 4만원 → priceMin: 32000, priceMax: 48000)
+- 수식어 없이 "N만원"만 단독으로 언급되면 priceMin: N*10000*0.9, priceMax: N*10000*1.1 로 해석한다 (±10%). (예: 4만원 → priceMin: 36000, priceMax: 44000, 예: 3만원 → priceMin: 27000, priceMax: 33000)
 - 가격 언급이 전혀 없으면 priceMin: 0, priceMax: 999999 로 한다.
 - 그 외 명시적인 가격/범위 표현("~이하", "~이상", "N원부터 M원")은 문맥에 맞게 합리적으로 변환한다.
 
