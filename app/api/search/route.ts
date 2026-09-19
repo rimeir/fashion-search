@@ -47,6 +47,8 @@ export async function POST(request: Request) {
     const priceMin = body.priceMin ?? 0;
     const priceMax = body.priceMax ?? 999999;
 
+    console.log("[SEARCH RECEIVED]", { keywords, priceMin, priceMax });
+
     const query = keywords.join(" ").trim();
     if (!query) {
       return Response.json({ error: "keywords가 필요합니다." }, { status: 400 });

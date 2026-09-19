@@ -140,6 +140,15 @@ export async function POST(request: Request) {
       return Response.json(fallbackParse(query));
     }
 
+    const { keywords, priceMin, priceMax, categories } = message.parsed_output;
+    console.log("[PARSE RESULT]", {
+      keywords,
+      priceMin,
+      priceMax,
+      categories,
+      receivedProfile: profile,
+    });
+
     return Response.json(message.parsed_output);
   } catch (error) {
     console.error("[/api/parse]", error);
