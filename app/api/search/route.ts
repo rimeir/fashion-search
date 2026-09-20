@@ -53,11 +53,10 @@ export async function POST(request: Request) {
 
     console.log("[SEARCH RECEIVED]", { keywords, priceMin, priceMax });
 
-    // 프로필의 성별/선호 스타일(첫 번째)을 검색어에 반영해 결과 관련성을 높인다.
+    // 프로필의 성별을 검색어에 반영해 결과 관련성을 높인다.
     const profileTerms: string[] = [];
     if (profile?.gender === "여성") profileTerms.push("여성");
     if (profile?.gender === "남성") profileTerms.push("남성");
-    if (profile?.styles && profile.styles.length > 0) profileTerms.push(profile.styles[0]);
 
     const query = [...keywords, ...profileTerms].join(" ").trim();
     console.log("[QUERY BUILT]", { query, priceMin, priceMax });
@@ -84,23 +83,22 @@ export async function POST(request: Request) {
 
     const products = data.shopping_results.map(toProduct);
 
-    // [DEBUG] 가격 필터 디버깅: 첫 번째 아이템 기준으로 price/priceMin/priceMax와 통과 여부를 확인한다.
-    if (products[0]) {
-      const firstItemPrice = products[0].price;
-      const firstItemPassed = firstItemPrice >= priceMin && firstItemPrice <= priceMax;
-      console.log("[DEBUG] price filter check:", {
-        firstItemPrice,
-        priceMin,
-        priceMax,
-        firstItemPassed,
-      });
-    }
+    // priceMax가 999999(무제한)보다 작으면 실제 가격 상한이 있다는 뜻이므로 필터를 적용한다.
+    const shouldFilter = priceMax < 999999;
+    const filtered = products.filter((item) => {
+      if (!shouldFilter) return true;
+      if (priceMin > 0 && item.price < priceMin) return false;
+      if (item.price > priceMax) return false;
+      return true;
+    });
 
-    // priceMin이 0이면 가격 정보가 없다는 뜻이므로 가격 필터를 적용하지 않는다.
-    const filtered =
-      priceMin === 0
-        ? products
-        : products.filter((p) => p.price >= priceMin && p.price <= priceMax);
+    console.log("[FILTER RESULT]", {
+      totalBefore: products.length,
+      totalAfter: filtered.length,
+      shouldFilter,
+      priceMin,
+      priceMax,
+    });
 
     const limited = filtered.slice(0, MAX_RESULTS);
 
