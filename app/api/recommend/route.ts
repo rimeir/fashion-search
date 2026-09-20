@@ -22,9 +22,9 @@ JSON만 반환하고 다른 텍스트는 절대 포함하지 마.`;
 function getRecommendItems(category: string): RecommendFlags {
   const 원피스카테고리 = ["원피스"];
   const 액세서리카테고리 = ["모자", "머플러"];
-  const 상의카테고리 = ["상의", "티셔츠", "셔츠", "니트", "후드", "맨투맨", "후드집업"];
+  const 상의카테고리 = ["상의", "티셔츠", "셔츠", "니트", "후드", "맨투맨"];
   const 하의카테고리 = ["하의", "바지", "슬랙스", "청바지", "스커트", "반바지", "진", "데님팬츠"];
-  const 아우터카테고리 = ["아우터", "자켓", "코트", "패딩", "점퍼", "가디건"];
+  const 아우터카테고리 = ["아우터", "자켓", "코트", "패딩", "점퍼", "가디건", "후드집업"];
   const 신발카테고리 = ["신발", "운동화", "로퍼", "부츠", "샌들", "스니커즈"];
 
   // 원피스는 이미 상의+하의를 겸하므로 bottom/top은 추천하지 않는다.
@@ -35,14 +35,16 @@ function getRecommendItems(category: string): RecommendFlags {
   if (액세서리카테고리.some((c) => category.includes(c))) {
     return { bottom: true, shoes: true, outer: true, top: true };
   }
+  // 아우터를 상의보다 먼저 체크한다: "후드집업"은 "후드"를 포함하는 문자열이라
+  // 상의 체크를 먼저 하면 아우터로 분류돼야 할 후드집업이 상의로 잘못 걸린다.
+  if (아우터카테고리.some((c) => category.includes(c))) {
+    return { bottom: true, shoes: true, outer: false, top: true };
+  }
   if (상의카테고리.some((c) => category.includes(c))) {
     return { bottom: true, shoes: true, outer: true, top: false };
   }
   if (하의카테고리.some((c) => category.includes(c))) {
     return { bottom: false, shoes: true, outer: true, top: true };
-  }
-  if (아우터카테고리.some((c) => category.includes(c))) {
-    return { bottom: true, shoes: true, outer: false, top: true };
   }
   if (신발카테고리.some((c) => category.includes(c))) {
     return { bottom: true, shoes: false, outer: false, top: true };

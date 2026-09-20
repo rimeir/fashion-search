@@ -10,7 +10,7 @@ interface SearchBarProps {
 const EXAMPLES = [
   "린넨 셔츠 + 여름 + 3만원대",
   "블랙 슬랙스 + 미니멀 + 7만원 이하",
-  "맨투맨 + 오버핏 + 4만원",
+  "후드 집업 + 오버핏 + 4만원",
 ];
 
 export default function SearchBar({ onSearch, loading }: SearchBarProps) {
