@@ -89,35 +89,3 @@ lib/
 ├── anthropic.ts             # Claude 클라이언트 & 모델 설정
 └── types.ts                 # 공용 타입 정의
 ```
-
-## 시작하기
-
-### 1. 설치
-
-```bash
-npm install
-```
-
-### 2. 환경 변수 설정
-
-`.env.local` 파일을 만들고 아래 값을 채워주세요.
-
-```bash
-ANTHROPIC_API_KEY=      # https://platform.claude.com 에서 발급
-SERPAPI_KEY=            # https://serpapi.com 에서 발급
-```
-
-### 3. 개발 서버 실행
-
-```bash
-npm run dev
-```
-
-[http://localhost:3000](http://localhost:3000) 에서 확인할 수 있습니다.
-
-### 4. 빌드 / 린트
-
-```bash
-npm run build
-npm run lint
-```
