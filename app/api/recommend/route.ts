@@ -21,6 +21,7 @@ JSON만 반환하고 다른 텍스트는 절대 포함하지 마.`;
 // mainItem의 category와 같은 종류를 다시 추천하지 않도록, category에 따라 필요한 코디 구성을 결정한다.
 function getRecommendItems(category: string): RecommendFlags {
   const 원피스카테고리 = ["원피스"];
+  const 액세서리카테고리 = ["모자", "머플러"];
   const 상의카테고리 = ["상의", "티셔츠", "셔츠", "니트", "후드", "맨투맨", "후드집업"];
   const 하의카테고리 = ["하의", "바지", "슬랙스", "청바지", "스커트", "반바지", "진", "데님팬츠"];
   const 아우터카테고리 = ["아우터", "자켓", "코트", "패딩", "점퍼", "가디건"];
@@ -29,6 +30,10 @@ function getRecommendItems(category: string): RecommendFlags {
   // 원피스는 이미 상의+하의를 겸하므로 bottom/top은 추천하지 않는다.
   if (원피스카테고리.some((c) => category.includes(c))) {
     return { bottom: false, shoes: true, outer: true, top: false };
+  }
+  // 모자/머플러는 곁들이는 아이템이라 자기 자신과 안 겹치므로 풀 코디(4개)를 모두 추천한다.
+  if (액세서리카테고리.some((c) => category.includes(c))) {
+    return { bottom: true, shoes: true, outer: true, top: true };
   }
   if (상의카테고리.some((c) => category.includes(c))) {
     return { bottom: true, shoes: true, outer: true, top: false };
