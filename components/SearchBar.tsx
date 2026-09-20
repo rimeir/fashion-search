@@ -30,7 +30,7 @@ export default function SearchBar({ onSearch, loading }: SearchBarProps) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="오버사이즈 자켓 + 5만원 전후"
+          placeholder="카키색 야상"
           disabled={loading}
           className="flex-1 rounded-full border border-zinc-300 px-5 py-3 text-sm outline-none focus:border-zinc-500 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
         />
