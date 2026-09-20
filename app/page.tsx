@@ -5,7 +5,14 @@ import ProfileSetup from "@/components/ProfileSetup";
 import SearchBar from "@/components/SearchBar";
 import ParsedBadges from "@/components/ParsedBadges";
 import ProductGrid from "@/components/ProductGrid";
-import { EMPTY_PROFILE, type ParsedQuery, type Product, type UserProfile } from "@/lib/types";
+import RecommendSection from "@/components/RecommendSection";
+import {
+  EMPTY_PROFILE,
+  type ParsedQuery,
+  type Product,
+  type RecommendResult,
+  type UserProfile,
+} from "@/lib/types";
 
 const PROFILE_STORAGE_KEY = "fashion-search-profile";
 
@@ -17,6 +24,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastParsed, setLastParsed] = useState<ParsedQuery | null>(null);
+  const [recommendations, setRecommendations] = useState<RecommendResult | null>(null);
+  const [recommendLoading, setRecommendLoading] = useState(false);
 
   // handleSearch 등 콜백이 클로저로 오래된 profile을 참조하지 않도록 항상 최신값을 추적한다.
   const profileRef = useRef(profile);
@@ -50,10 +59,33 @@ export default function Home() {
     }
   }
 
+  async function fetchRecommendations(mainItem: string, category: string, gender: string) {
+    setRecommendLoading(true);
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ mainItem, category, gender }),
+      });
+      if (!res.ok) {
+        setRecommendations(null);
+        return;
+      }
+      const data: RecommendResult = await res.json();
+      setRecommendations(data);
+    } catch {
+      setRecommendations(null);
+    } finally {
+      setRecommendLoading(false);
+    }
+  }
+
   async function handleSearch(query: string) {
     setLoading(true);
     setError(null);
     setHasSearched(true);
+    setRecommendations(null);
 
     try {
       const profile = profileRef.current;
@@ -101,6 +133,10 @@ export default function Home() {
       }
       const { products: results }: { products: Product[] } = await searchRes.json();
       setProducts(results);
+
+      if (results.length > 0 && parsed.keywords[0]) {
+        fetchRecommendations(parsed.keywords[0], parsed.categories[0] ?? "", profile.gender ?? "");
+      }
     } catch (err) {
       setProducts([]);
       setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
@@ -153,8 +189,9 @@ export default function Home() {
         </section>
 
         {hasSearched && (
-          <section className="flex flex-1 flex-col">
+          <section className="flex flex-1 flex-col gap-6">
             <ProductGrid products={products} loading={loading} error={error} />
+            <RecommendSection recommendations={recommendations} loading={recommendLoading} />
           </section>
         )}
       </main>

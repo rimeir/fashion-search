@@ -6,3 +6,4 @@ export const anthropic = new Anthropic({
 });
 
 export const PARSE_MODEL = "claude-sonnet-5";
+export const RECOMMEND_MODEL = "claude-sonnet-5";

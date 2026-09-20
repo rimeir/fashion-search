@@ -39,5 +39,12 @@ export interface SearchApiResponse {
   total: number;
 }
 
+// /api/recommend 반환 타입: 메인 아이템과 어울리는 코디 1벌 (카테고리별 상품 1개씩)
+export interface RecommendResult {
+  bottom: Product | null;
+  shoes: Product | null;
+  outer: Product | null;
+}
+
 // /api/parse는 ParsedQuery를 감싸지 않고 그대로 반환한다.
 export type ParseApiResponse = ParsedQuery;
