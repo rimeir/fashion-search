@@ -111,7 +111,7 @@ export default function Home() {
 
       if (parsed.isFashion === false) {
         setProducts([]);
-        setError("👗 상의, 하의, 아우터, 신발, 가방만 검색할 수 있어요!");
+        setError("👗 패션 아이템만 검색할 수 있어요!");
         return;
       }
 
@@ -153,7 +153,7 @@ export default function Home() {
             <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
               Fitto
             </h1>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">말하듯이 검색하세요</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">패션 검색을 더 쉽게</p>
           </div>
           <button
             type="button"

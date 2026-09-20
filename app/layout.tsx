@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Fitto",
-  description: "말하듯이 검색하세요 — 자연어 패션 검색 서비스 Fitto",
+  description: "패션 검색을 더 쉽게 — 자연어 패션 검색 서비스 Fitto",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
