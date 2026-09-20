@@ -13,9 +13,9 @@ export interface UserProfile {
 }
 
 export const EMPTY_PROFILE: UserProfile = {
-  ageGroup: null,
-  gender: null,
-  styles: [],
+  ageGroup: "40대+",
+  gender: "여성",
+  styles: ["캐주얼", "빈티지"],
 };
 
 export interface ParsedQuery {
