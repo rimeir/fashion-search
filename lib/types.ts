@@ -39,11 +39,13 @@ export interface SearchApiResponse {
   total: number;
 }
 
-// /api/recommend 반환 타입: 메인 아이템과 어울리는 코디 1벌 (카테고리별 상품 1개씩)
+// /api/recommend 반환 타입: 메인 아이템과 어울리는 코디 1벌 (카테고리별 상품 1개씩).
+// mainItem의 카테고리와 겹치는 슬롯은 null로 온다 (예: 하의를 검색하면 bottom은 항상 null).
 export interface RecommendResult {
   bottom: Product | null;
   shoes: Product | null;
   outer: Product | null;
+  top: Product | null;
 }
 
 // /api/parse는 ParsedQuery를 감싸지 않고 그대로 반환한다.

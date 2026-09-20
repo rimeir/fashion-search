@@ -6,9 +6,10 @@ interface RecommendSectionProps {
 }
 
 const LABELS: { key: keyof RecommendResult; label: string }[] = [
+  { key: "top", label: "상의" },
   { key: "bottom", label: "하의" },
-  { key: "shoes", label: "신발" },
   { key: "outer", label: "아우터" },
+  { key: "shoes", label: "신발" },
 ];
 
 function formatPrice(price: number): string {
