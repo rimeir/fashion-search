@@ -17,6 +17,7 @@ interface ParsedFilters {
   priceMin: number;
   priceMax: number;
   categories: string[];
+  isFashion: boolean;
 }
 
 // output_config.format으로 넘길 JSON 스키마. additionalProperties: false + required 전체 지정으로
@@ -42,13 +43,36 @@ const OUTPUT_SCHEMA = {
       items: { type: "string" },
       description: "상품 카테고리 목록 (예: 원피스, 니트, 스니커즈).",
     },
+    isFashion: {
+      type: "boolean",
+      description: "허용된 패션 카테고리(상의/하의/아우터/신발/가방) 요청이면 true, 아니면 false.",
+    },
   },
-  required: ["keywords", "priceMin", "priceMax", "categories"],
+  required: ["keywords", "priceMin", "priceMax", "categories", "isFashion"],
   additionalProperties: false,
 } as const;
 
 const SYSTEM_PROMPT = `너는 패션 이커머스 검색어 분석기다. 사용자의 자연어 요청과 프로필을 분석해서
-keywords, priceMin, priceMax, categories 필드를 가진 JSON만 반환한다.
+keywords, priceMin, priceMax, categories, isFashion 필드를 가진 JSON만 반환한다.
+
+패션 카테고리 검증 규칙:
+허용 카테고리: 상의(티셔츠/셔츠/니트/후드/맨투맨),
+하의(바지/슬랙스/청바지/스커트/반바지),
+아우터(자켓/코트/패딩/점퍼/가디건),
+신발(운동화/로퍼/부츠/샌들/슬리퍼),
+가방(백팩/숄더백/토트백/크로스백)
+
+비허용 카테고리: 속옷/언더웨어,
+선글라스/안경, 시계/쥬얼리/악세사리,
+스마트폰/전자기기, 음식/식품,
+화장품/뷰티, 스포츠용품(옷 제외),
+모자/캡, 양말/스타킹
+
+JSON에 isFashion: boolean 추가.
+허용 카테고리면 true, 비허용이면 false.
+isFashion이 false면
+keywords: [], priceMin: 0, priceMax: 999999,
+categories: [], isFashion: false 반환.
 
 keywords 규칙 (반드시 준수):
 - + 기호는 구분자이므로 keywords에 절대 포함하지 마라
@@ -85,12 +109,14 @@ function buildUserMessage(query: string, profile: RequestProfile): string {
 }
 
 // Claude 응답 파싱에 실패했을 때의 fallback: query를 공백 기준으로 쪼개 키워드로 사용한다.
+// isFashion 여부는 판단할 수 없으므로 검색을 막지 않도록 true로 둔다.
 function fallbackParse(query: string): ParsedFilters {
   return {
     keywords: query.split(/\s+/).filter(Boolean),
     priceMin: 0,
     priceMax: 999999,
     categories: [],
+    isFashion: true,
   };
 }
 
@@ -103,7 +129,8 @@ function isValidParsedFilters(value: unknown): value is ParsedFilters {
     typeof v.priceMin === "number" &&
     typeof v.priceMax === "number" &&
     Array.isArray(v.categories) &&
-    v.categories.every((c) => typeof c === "string")
+    v.categories.every((c) => typeof c === "string") &&
+    typeof v.isFashion === "boolean"
   );
 }
 
@@ -140,12 +167,13 @@ export async function POST(request: Request) {
       return Response.json(fallbackParse(query));
     }
 
-    const { keywords, priceMin, priceMax, categories } = message.parsed_output;
+    const { keywords, priceMin, priceMax, categories, isFashion } = message.parsed_output;
     console.log("[PARSE RESULT]", {
       keywords,
       priceMin,
       priceMax,
       categories,
+      isFashion,
       receivedProfile: profile,
     });
 

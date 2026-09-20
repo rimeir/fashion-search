@@ -5,6 +5,7 @@ const MAX_RESULTS = 20;
 
 interface SearchProfile {
   gender?: string;
+  ageGroup?: string;
   styles?: string[];
 }
 
@@ -53,10 +54,12 @@ export async function POST(request: Request) {
 
     console.log("[SEARCH RECEIVED]", { keywords, priceMin, priceMax });
 
-    // 프로필의 성별을 검색어에 반영해 결과 관련성을 높인다.
+    // 프로필의 성별/나이대/선호 스타일(첫 번째)을 검색어에 반영해 결과 관련성을 높인다.
     const profileTerms: string[] = [];
     if (profile?.gender === "여성") profileTerms.push("여성");
     if (profile?.gender === "남성") profileTerms.push("남성");
+    if (profile?.ageGroup) profileTerms.push(profile.ageGroup);
+    if (profile?.styles?.[0]) profileTerms.push(profile.styles[0]);
 
     const query = [...keywords, ...profileTerms].join(" ").trim();
     console.log("[QUERY BUILT]", { query, priceMin, priceMax });

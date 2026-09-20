@@ -77,6 +77,12 @@ export default function Home() {
       const parsed: ParsedQuery = await parseRes.json();
       setLastParsed(parsed);
 
+      if (parsed.isFashion === false) {
+        setProducts([]);
+        setError("👗 상의, 하의, 아우터, 신발, 가방만 검색할 수 있어요!");
+        return;
+      }
+
       const searchRes = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

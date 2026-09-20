@@ -23,6 +23,7 @@ export interface ParsedQuery {
   priceMin: number; // 최소 가격(원). 언급 없으면 0
   priceMax: number; // 최대 가격(원). 언급 없으면 999999
   categories: string[]; // 예: 원피스, 니트, 스니커즈
+  isFashion: boolean; // 패션(의류/신발/가방) 검색 요청인지 여부
 }
 
 export interface Product {
